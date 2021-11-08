@@ -41,6 +41,11 @@ const schema = new Schema({
 		default: 1000,
 	},
 
+	expFactory: {
+		type: Number,
+		default: 0,
+	},
+
 	energy: {
 		type: Number,
 		default: 0,
@@ -143,6 +148,7 @@ schema.methods.formatOpen = function () {
 
 schema.methods.formatPrivate = function () {
 	return {
+		_id: this._id,
 		email: this.email,
 		name: this.name,
 		priv: this.priv,
@@ -151,6 +157,7 @@ schema.methods.formatPrivate = function () {
 		lvl: this.lvl,
 		exp: this.exp,
 		expMax: this.expMax,
+		expFactory: this.expFactory,
 		energy: this.energy,
 		energyMax: this.energyMax,
 		vip: this.vip,
@@ -161,6 +168,44 @@ schema.methods.formatPrivate = function () {
 		oil: this.oil,
 		ore: this.ore,
 		buildingMaterial: this.buildingMaterial,
+	}
+}
+
+schema.methods.addExp = async function (val = 10) {
+	await this.update({$inc: {exp: val}}).then(async () => {
+		if ((this.exp + val) >= this.expMax) {
+			await this.update({$inc: {lvl: 1, expMax: this.expMax}});
+		}
+	});
+}
+
+schema.methods.addEnergy = async function (val = 1) {
+	await this.update({$inc: {energy: val}});
+}
+
+schema.methods.delEnergy = async function (val = 1) {
+	await this.update({$inc: {energy: -val}});
+}
+
+schema.methods.addMoney = async function (val = 0) {
+	await this.update({$inc: {money: val.toFixed(0)}});
+}
+
+schema.methods.addGold = async function (val = 0) {
+	await this.update({gold: (this.gold + val).toFixed(2)});
+}
+
+schema.methods.addResource = async function (type = "oil", val = 0) {
+	switch (type) {
+		case "oil":
+			await this.update({$inc: {oil: val.toFixed(0)}});
+			break;
+		case "ore":
+			await this.update({$inc: {ore: val.toFixed(0)}});
+			break;
+		case "buildingMaterial":
+			await this.update({$inc: {buildingMaterial: val.toFixed(0)}});
+			break;
 	}
 }
 

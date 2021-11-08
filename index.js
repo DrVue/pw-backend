@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
 })
 
 setInterval(async () => {
-	await Users.updateMany({$expr: {$lte: ["energy", "energyMax"]}}, {$inc: {energy: 1}})
+	await Users.updateMany({energy: {$lt: 200}}, {$inc: {energy: 1}});
 }, 1000 * 60)
 
 app.listen(PORT, () => {
