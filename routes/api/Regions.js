@@ -114,4 +114,33 @@ router.post("/move", async (req, res) => {
 	}
 });
 
+router.post("/edit", async (req, res) => {
+	const ret = await Sessions.getId(req.body.token);
+	const data = await Users.findById(ret);
+
+	if (data.priv === 3) {
+		const {name, nameLat} = req.body;
+		const reg = await Regions.findOne({name: name});
+		if (reg === null) {
+			await Regions.updateOne({_id: req.body.id}, {name: name, nameLat: nameLat});
+			return res.send({
+				_id: req.body.id,
+				response: "ok",
+			});
+		} else {
+			return res.send({
+				data: {},
+				response: "err",
+				error: "thisRegionNameNotFree",
+			})
+		}
+	} else {
+		return res.send({
+			data: {},
+			response: "err",
+			error: "invalidToken",
+		})
+	}
+});
+
 module.exports = router;
