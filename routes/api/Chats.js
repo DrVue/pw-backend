@@ -5,6 +5,9 @@ const Users = require("../../models/Users");
 const Chats = require("../../models/Chats");
 const ChatMessages = require("../../models/ChatMessages");
 
+const io = require("../../socket.io");
+
+
 router.post("/add", async (req, res) => {
 	const ret = await Sessions.getId(req.body.token);
 	const data = await Users.findById(ret);
@@ -52,7 +55,7 @@ router.post("/newMessageByTag", async (req, res) => {
 		chatTag: req.body.tag,
 		time: new Date(),
 	})
-	await msg.save();
+	await msg.save().then(async () => {io.emit("message", await ChatMessages.find({chatTag: req.body.tag}).limit(50).sort({time: -1}))});
 	res.send({response: "ok"});
 })
 
@@ -151,31 +154,3 @@ router.post("/edit", async (req, res) => {
 
 module.exports = router;
 
-const express = require("express");
-const cors = require("cors");
-
-const app = express();
-
-app.use(cors());
-
-const server = require("http").createServer(app);
-
-const io = require("socket.io")(server, {
-	cors: {
-		origin: "*",
-	},
-});
-
-// io.set("origins", "*:*");
-
-io.on("connection", (client) => {
-	client.on("subscribeToChat", (chatTag) => {
-		console.log("Connect");
-		setInterval(async () => {
-			client.emit("message", await ChatMessages.find({chatTag: chatTag}).limit(50).sort({time: -1}))
-		}, 1000)
-	})
-})
-
-io.listen(30011);
-console.log("Create socket on port 30011");
