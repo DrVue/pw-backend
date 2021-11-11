@@ -47,8 +47,13 @@ router.post("/getOne", async (req, res) => {
 			error: "notFoundRegion",
 		})
 	} else {
-		return res.send({
-			data: data,
+		const users = await Users.find({region: data._id});
+		const obj2 = {
+			userCount: users.length
+		}
+		const region = Object.assign(obj2, data._doc)
+		return await res.send({
+			data: region,
 			response: "ok",
 		})
 	}
@@ -56,7 +61,7 @@ router.post("/getOne", async (req, res) => {
 
 router.post("/search", async (req, res) => {
 	const name = new RegExp(req.body.name, "i");
-	const nameLat = new RegExp(req.body.nameLat, "i");
+	const nameLat = new RegExp(req.body.name, "i");
 	const data = await Regions.find().or([{"name": {$regex: name}}, {"nameLat": {$regex: nameLat}}])
 	if (data === null) {
 		return res.send({

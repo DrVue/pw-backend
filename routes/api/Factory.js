@@ -100,6 +100,7 @@ router.post("/work", async (req, res) => {
 			if (data.energy >= energy) {
 				await data.delEnergy(enr * 10)
 				await data.addExp(10 * enr);
+				await data.addExpFactory(10 * enr);
 				await factory.addExp(10 * enr);
 				await data.addMoney((factory.profitMoney * factory.salary) * enr);
 				await factory.addMoneyBank(enr);

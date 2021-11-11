@@ -12,8 +12,33 @@ router.post("/get", async (req, res) => {
 	const ret = await Sessions.getId(req.body.token);
 	const data = await Users.findById(ret);
 	if (ret !== null) {
+		await data.updateLastLogin();
 		res.send({
 			data: data.formatPrivate(),
+			response: "ok",
+		});
+	} else {
+		res.send({
+			data: {},
+			response: "err",
+			error: "accessDenied",
+		})
+	}
+});
+
+router.post("/deleteNotify", async (req, res) => {
+	const ret = await Sessions.getId(req.body.token);
+	const data = await Users.findById(ret);
+	if (ret !== null) {
+		switch (req.body.type) {
+			case "notifyNewLevel":
+				await data.update({notifyNewLevel: false});
+				break;
+			case "notifyNewMail":
+				await data.update({notifyNewMail: false});
+				break;
+		}
+		res.send({
 			response: "ok",
 		});
 	} else {
@@ -57,6 +82,7 @@ router.post("/login", async (req, res) => {
 router.post("/checkToken", async (req, res) => {
 	const ret = await Sessions.checkToken(req.body.token);
 	if (ret !== null) {
+
 		return res.send({
 			data: ret,
 			response: "ok",

@@ -3,13 +3,6 @@ const model = require("mongoose").model;
 const Sessions = require("./Sessions");
 const md5 = require("md5");
 
-let randomString = (i = 32) => {
-	let rnd = '';
-	while (rnd.length < i)
-		rnd += Math.random().toString(36).substring(2);
-	return rnd.substring(0, i);
-};
-
 const schema = new Schema({
 	email: String,
 	pass: String,
@@ -18,10 +11,8 @@ const schema = new Schema({
 		type: Number,
 		default: 0,
 	},
-	lastLogin: {
-		type: Number,
-		default: Date.now(),
-	},
+	lastLogin: Date,
+	regDate: Date,
 
 	region: {
 		type: String,
@@ -73,6 +64,15 @@ const schema = new Schema({
 		default: 100,
 	},
 
+	notifyNewLevel: {
+		type: Boolean,
+		default: false,
+	},
+	notifyNewMail: {
+		type: Boolean,
+		default: false,
+	},
+
 	energyBank: {
 		type: Number,
 		default: 0,
@@ -109,6 +109,7 @@ schema.statics.addUser = async function (email, name, pass) {
 	let user = new this({
 		email: email,
 		name: name,
+		regDate: new Date(),
 	});
 	await user.setPassword(pass);
 	await user.save();
@@ -116,8 +117,7 @@ schema.statics.addUser = async function (email, name, pass) {
 };
 
 schema.statics.getUser = async function (_id) {
-	const user = await this.findOne({_id: _id});
-	return user;
+	return await this.findOne({_id: _id});
 };
 
 schema.methods.setPassword = function (pass) {
@@ -140,9 +140,14 @@ schema.statics.loginUser = async function (email, pass) {
 
 schema.methods.formatOpen = function () {
 	return {
+		_id: this._id,
 		email: this.email,
 		name: this.name,
 		lastLogin: this.lastLogin,
+		expFactory: this.expFactory,
+		regDate: this.regDate,
+		region: this.region,
+		lvl: this.lvl,
 	}
 }
 
@@ -153,6 +158,7 @@ schema.methods.formatPrivate = function () {
 		name: this.name,
 		priv: this.priv,
 		lastLogin: this.lastLogin,
+		regDate: this.regDate,
 		region: this.region,
 		lvl: this.lvl,
 		exp: this.exp,
@@ -164,6 +170,8 @@ schema.methods.formatPrivate = function () {
 		vipDate: this.vipDate,
 		money: this.money,
 		gold: this.gold,
+		notifyNewLevel: this.notifyNewLevel,
+		notifyNewMail: this.notifyNewMail,
 		energyBank: this.energyBank,
 		oil: this.oil,
 		ore: this.ore,
@@ -171,12 +179,20 @@ schema.methods.formatPrivate = function () {
 	}
 }
 
+schema.methods.updateLastLogin = async function () {
+	await this.update({lastLogin: new Date()});
+}
+
 schema.methods.addExp = async function (val = 10) {
 	await this.update({$inc: {exp: val}}).then(async () => {
 		if ((this.exp + val) >= this.expMax) {
-			await this.update({$inc: {lvl: 1, expMax: this.expMax}});
+			await this.update({$inc: {lvl: 1, expMax: this.expMax}, notifyNewLevel: true, exp: 0});
 		}
 	});
+}
+
+schema.methods.addExpFactory = async function (val = 10) {
+	await this.update({$inc: {expFactory: val}});
 }
 
 schema.methods.addEnergy = async function (val = 1) {
